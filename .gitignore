@@ -1,0 +1,9 @@
+.DS_Store
+.vscode
+.idea
+.cache
+.eslintrc.js
+*.log
+node_modules/
+dist/
+www/

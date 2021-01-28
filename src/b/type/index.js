@@ -1,0 +1,9 @@
+export { default as isBool } from "./isBool";
+export { default as isNumber } from "./isNumber";
+export { default as isString } from "./isString";
+export { default as isSymbol } from "./isSymbol";
+export { default as isArray } from "./isArray";
+export { default as isObject } from "./isObject";
+export { default as isFunction } from "./isFunction";
+export { default as isEmptyObject } from "./isEmptyObject";
+export { default as isPlainObject } from "./isPlainObject";
