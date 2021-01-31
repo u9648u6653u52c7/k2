@@ -9,7 +9,7 @@ module.exports = {
       {
         test: /\.js$/,
         loader: "babel-loader",
-        include: `${rootDir}/src/`,
+        exclude: /(node_modules|bower_components)/
       }
     ]
   },
