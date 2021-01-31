@@ -1,4 +1,4 @@
-import isArray from "../type/isArray";
+import { isArray } from "../type";
 
 export default function (arr) {
     return isArray(arr)
