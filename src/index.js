@@ -2,4 +2,4 @@ const log = msg => {
     console.log(msg);
 };
 
-log(`this is a test message.`);
+log(`this is a test message..`);
