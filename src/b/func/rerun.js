@@ -46,8 +46,8 @@ function rerun(func, polyfill, options) {
         function run() {
             if (overflow) {
                 if (typeof polyfill === "function") {
-                    const reasons = slice.call(arguments);
-                    polyfill.apply(ctx, reasons);
+                    const _args = slice.call(arguments);
+                    polyfill.apply(ctx, _args);
                 }
                 func = polyfill = ctx = args = null;
             } else {
@@ -60,9 +60,7 @@ function rerun(func, polyfill, options) {
                     func.apply(ctx, args);
                 }
             }
-        }
-
-        run();
+        } run();
     };
 }
 
