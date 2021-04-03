@@ -1,6 +1,6 @@
 import each from "./each";
 import hasOwn from "../var/hasOwn";
-import { isNumber, isString, isArray, isObject, isEmptyObject } from "../type"
+import { isNumber, isString, isArray, isObject, isEmptyObject } from "../type";
 
 /**
  * validatePath
@@ -99,6 +99,27 @@ function retValue(key, value, bmap) {
 }
 
 /**
+ * getSepaReg 生成分隔符正则表达式来消除字符串前后的分隔符
+ * @param {String} separator
+ * @returns {RegExp}
+ */
+function getSepaReg(separator) {
+    separator = isString(separator) ? separator : "/";
+    return new RegExp([
+        "^",
+        separator,
+        "*|",
+        separator,
+        "*$"
+    ].join(""), "g");
+}
+
+const rslash = getSepaReg();
+
+// 不可读字符串用作赋值操作
+const unreadableString = "_U2FsdGVkX1+4v9t9TNZfxigZNIFfJW408NwfbVGD8sQ=";
+
+/**
  * getDataFromJsonByPath
  * @param {String | String[] | {[key: String]: String}} path
  * @param {JSON} json
@@ -115,27 +136,41 @@ export default function getDataFromJsonByPath(path, json, separator, descriptor)
     let flag;
     // 字符串类型转换成数组类型，方便后续遍历
     path = isString(path) ? (flag = 1, [path]) : path;
-    // 分隔符
-    separator = isString(separator) ? separator : "/";
+    // 分隔符和生成分隔符正则表达式来消除字符串前后的分隔符
+    let rsepa;
+    separator = isString(separator)
+        ? (rsepa = separator == "/" ? rslash : getSepaReg(separator), separator)
+        : (rsepa = rslash, "/");
     // 兜底描述符
     descriptor = isString(descriptor) ? descriptor : ":";
-    // 计算遍历深度、节点存储、兜底数据存储
+    // 遍历深度、遍历节点存储、兜底数据存储、是否重建数据结构标识
     let depth = 0, map = {}, bmap = {}, rflag = false;
     each(path, function (val, key, obj) {
         if (!hasOwn.call(obj, key)) { return; }
-        const arr = val.split(separator);
-        const len = arr.length;
-        depth = Math.max(depth, len);
-        const lastIndex = len - 1;
-        const lastElem = arr[lastIndex];
-        const index = lastElem.indexOf(descriptor);
+        // key值优化
+        key = isObject(obj) ? key.replace(rsepa, "") : key;
+        // 兜底数据描述符位置
+        const index = val.indexOf(descriptor);
+        // 兜底数据及数据查询路径处理
         if (index != -1) {
-            arr[lastIndex] = lastElem.substr(0, index);
-            const expr = lastElem.substr(index + 1);
+            const expr = val.substring(index + 1);
             if (expr) { bmap[key] = calcExpr(expr); }
+            val = val.substring(0, index).replace(rsepa, "");
+            val = val ? val : unreadableString;
+        } else {
+            val = val.replace(rsepa, "");
+            if (!val) { return; }
         }
+        const arr = val.split(separator);
+        // 遍历深度计算
+        depth = Math.max(depth, arr.length);
+        // 遍历节点存储
         map[key] = arr;
-        if (isObject(obj) && !rflag && key.indexOf(separator) != -1) { rflag = true; }
+        // 是否重建数据结构标识计算
+        if (isObject(obj)
+            && !rflag
+            && key.indexOf(separator) != -1
+        ) { rflag = true; }
     });
     // 结果集
     const result = isArray(path) ? [] : {};
