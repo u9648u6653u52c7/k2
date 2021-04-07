@@ -116,6 +116,8 @@ function getSepaReg(separator) {
 
 const rslash = getSepaReg();
 
+const rcouple = /\[(.+)=(.*)\]/;
+
 // 不可读字符串用作赋值操作
 const unreadableString = "_U2FsdGVkX1+4v9t9TNZfxigZNIFfJW408NwfbVGD8sQ=";
 
@@ -146,7 +148,6 @@ export default function getDataFromJsonByPath(path, json, separator, descriptor)
     // 遍历深度、遍历节点存储、兜底数据存储、是否重建数据结构标识
     let depth = 0, map = {}, bmap = {}, rflag = false;
     each(path, function (val, key, obj) {
-        if (!hasOwn.call(obj, key)) { return; }
         // key值优化
         key = isObject(obj) ? key.replace(rsepa, "") : key;
         // 兜底数据描述符位置
@@ -172,21 +173,52 @@ export default function getDataFromJsonByPath(path, json, separator, descriptor)
             && key.indexOf(separator) != -1
         ) { rflag = true; }
     });
-    // 结果集
+    // 模糊路径集、结果集
+    let pmap = {};
     const result = isArray(path) ? [] : {};
     // 节点遍历
     for (let i = 0; i < depth; i++) {
         each(map, function (arr, key, obj) {
-            if (!hasOwn.call(obj, key)) { return; }
+            if (hasOwn.call(pmap, key)) { return; }
             const field = arr[i];
             const root = hasOwn.call(result, key) ? result[key] : json;
             if (field && root) {
-                result[key] = retValue(key, root[field], bmap);
+                if (rcouple.test(field)) {
+                    pmap[key] = { json: root, couple: field };
+                    delete result[key];
+                } else {
+                    result[key] = retValue(key, root[field], bmap);
+                }
+            }
+        });
+    }
+
+    if (!isEmptyObject(pmap)) {
+        each(pmap, function (v, k) {
+            const json = v.json;
+            if (!validateJson(json)) { return; }
+            const field = v.couple;
+            const couple = field.match(rcouple);
+            const key = couple[1];
+            const rval = new RegExp(couple[2]);
+            const paths = [];
+            each(json, function (el, i) {
+                if (el && rval.test(el[key])) {
+                    const str = path[k];
+                    paths.push(i + str.substring(
+                        str.indexOf(field) + field.length
+                    ));
+                }
+            });
+
+            if (paths.length > 0) {
+                const arr = getDataFromJsonByPath(paths, json, separator, descriptor);
+                result[k] = arr.length > 1 ? arr : arr[0];
             }
         });
     }
     // 内存清理
-    path = map = bmap = null;
+    path = map = bmap = pmap = null;
 
     if (rflag) {
         return bdc(result, separator);
