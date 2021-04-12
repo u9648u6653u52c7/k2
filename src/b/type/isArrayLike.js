@@ -1,4 +1,5 @@
 import isWindow from "./isWindow";
+import isString from "./isString";
 import isNumber from "./isNumber";
 import isArray from "./isArray";
 import isFunction from "./isFunction";
@@ -6,7 +7,9 @@ import isFunction from "./isFunction";
 export default function (obj) {
     var length = !!obj && obj.length;
 
-    if (isFunction(obj) || isWindow(obj)) {
+    if (isString(obj)
+        || isFunction(obj)
+        || isWindow(obj)) {
         return false;
     }
 
